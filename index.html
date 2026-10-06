@@ -3,133 +3,160 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>TutorAI — Aprenda no seu ritmo</title>
+<title>TutorAI</title>
 <style>
 *{box-sizing:border-box}
 body{margin:0;background:#eef2ff;color:#182444;font-family:Arial,sans-serif}
-main{max-width:700px;margin:40px auto;padding:28px;background:white;border-radius:20px}
+main{max-width:750px;margin:30px auto;padding:25px;background:white;border-radius:20px}
 h1{color:#5145cd}
 p{line-height:1.6}
-label{display:block;margin-top:24px}
-textarea{width:100%;min-height:110px;padding:15px;margin-top:10px;border:1px solid #aab4cc;border-radius:12px;font:inherit}
-button{padding:12px 18px;margin:8px 4px 0 0;border:0;border-radius:10px;background:#5145cd;color:white;font:inherit;cursor:pointer}
-#resposta{margin-top:24px;padding:20px;background:#f4f6ff;border-radius:12px;white-space:pre-wrap;line-height:1.7}
-@media(max-width:750px){main{margin:16px;padding:22px}}
+button{padding:13px 20px;background:#5145cd;color:white;border:0;border-radius:10px;font:inherit;cursor:pointer}
+button:disabled{opacity:.5;cursor:default}
+textarea{width:100%;min-height:100px;margin:12px 0;padding:14px;border:1px solid #aab4cc;border-radius:12px;font:inherit}
+label{display:block;margin-top:20px}
+#status{padding:15px;background:#eef2ff;border-radius:10px;overflow-wrap:anywhere}
+#chat{margin:20px 0}
+.mensagem{padding:15px;margin:12px 0;border-radius:12px;background:#f4f6ff;white-space:pre-wrap;line-height:1.6;overflow-wrap:anywhere}
+.usuario{background:#e3e8ff}
+@media(max-width:800px){main{margin:15px}}
 </style>
 </head>
 <body>
 <main>
 <h1>📚 TutorAI</h1>
-<p>Aprenda com explicações e exemplos.</p>
-<p>Esta versão consulta três assuntos cadastrados. Ainda não usa inteligência artificial.</p>
+<p>Converse com um tutor de estudos no seu navegador.</p>
+<p>O primeiro carregamento baixa um modelo de IA e pode consumir centenas de megabytes. Use Wi-Fi. A compatibilidade depende do aparelho.</p>
+<button id="carregar" type="button">Carregar IA</button>
+<p id="status" role="status">Clique em Carregar IA para começar.</p>
 
-<form id="estudo">
-<label for="pergunta">Qual assunto você quer entender?</label>
-<textarea id="pergunta" placeholder="Exemplo: o que é uma fração?" required></textarea>
-<button type="submit">Ver explicação</button>
+<div id="chat" role="log" aria-label="Conversa"></div>
+
+<form id="formulario">
+<label for="pergunta">Sua pergunta</label>
+<textarea id="pergunta" maxlength="2000"
+placeholder="Exemplo: explique frações com um exemplo."
+required disabled></textarea>
+<button id="enviar" type="submit" disabled>Enviar pergunta</button>
 </form>
-
-<p>Ou escolha um assunto:</p>
-<button type="button" data-assunto="fração">Frações</button>
-<button type="button" data-assunto="porcentagem">Porcentagem</button>
-<button type="button" data-assunto="fotossíntese">Fotossíntese</button>
-
-<div id="resposta" role="status" aria-live="polite">Escolha um assunto para começar.</div>
+<p>A IA pode errar. Confira as respostas com seu material e professor. Ela não consulta a internet nem substitui orientação profissional.</p>
 </main>
 
-<script>
-const aulas = [
-{
-palavras: ["fracao", "fracoes"],
-texto: `FRAÇÕES
+<script type="module">
+const carregar = document.getElementById("carregar");
+const status = document.getElementById("status");
+const pergunta = document.getElementById("pergunta");
+const enviar = document.getElementById("enviar");
+const chat = document.getElementById("chat");
 
-Uma fração representa uma divisão. Ela também pode representar partes iguais de um todo.
+let engine;
+let ocupada = false;
+const historico = [];
+const sistema = {
+  role: "system",
+  content: "Você é TutorAI, um tutor de estudos. Responda em português brasileiro, com clareza e exemplos. Ajude o aluno a entender e praticar. Se não souber, diga que não sabe. Não invente fontes. Não afirme pesquisar a internet. Em assuntos perigosos, ofereça orientação segura e adequada para estudantes."
+};
 
-Exemplo: uma pizza foi dividida em 8 fatias iguais. Se você comeu 3, comeu 3/8 da pizza.
-
-• Numerador: o número de cima (3) indica quantas partes foram consideradas.
-• Denominador: o número de baixo (8) indica em quantas partes iguais o todo foi dividido.
-
-Frações equivalentes:
-1/2 = 2/4. As duas representam a mesma quantidade.
-
-Soma com denominadores iguais:
-1/5 + 2/5 = 3/5.
-
-Soma com denominadores diferentes:
-1/2 + 1/4 = 2/4 + 1/4 = 3/4.
-
-Pratique:
-Uma barra tem 6 pedaços iguais. Você comeu 2. Qual fração representa o que comeu?
-
-Confira depois de tentar: 2/6, que simplificada é 1/3.`
-},
-{
-palavras: ["porcentagem", "percentagem", "por cento", "%"],
-texto: `PORCENTAGEM
-
-Porcentagem significa “por cento”, ou seja, uma quantidade em cada 100.
-
-25% = 25/100 = 1/4.
-
-Para calcular uma porcentagem:
-multiplique o valor pela porcentagem e divida por 100.
-
-Exemplo: quanto é 20% de 150?
-150 × 20 ÷ 100 = 30.
-
-Desconto:
-Um produto custa R$ 150 e tem 20% de desconto.
-O desconto é R$ 30.
-Preço final: 150 − 30 = R$ 120.
-
-Pratique:
-Quanto é 10% de 80?
-
-Confira depois de tentar: 8.`
-},
-{
-palavras: ["fotossintese"],
-texto: `FOTOSSÍNTESE
-
-É o processo em que plantas, algas e algumas bactérias usam energia da luz para produzir açúcares.
-
-Nas plantas, a clorofila ajuda a captar a luz. A planta utiliza água e gás carbônico para produzir açúcares e libera oxigênio.
-
-Resumo:
-água + gás carbônico + energia da luz → açúcares + oxigênio.
-
-Os açúcares fornecem energia e matéria para o crescimento da planta.
-
-Pratique:
-Qual gás a planta utiliza nesse processo?
-
-Confira depois de tentar: gás carbônico.`
-}
-];
-
-function explicar(assunto) {
-const busca = assunto.toLowerCase().normalize("NFD")
-.replace(/[\u0300-\u036f]/g, "").trim();
-if (!busca) return;
-const aula = aulas.find(item =>
-item.palavras.some(palavra => busca.includes(palavra)));
-document.getElementById("resposta").textContent = aula
-? aula.texto
-: "Ainda não tenho uma explicação cadastrada para essa pergunta. Nesta versão, escolha frações, porcentagem ou fotossíntese.";
+function mensagem(titulo, texto, usuario = false) {
+  const bloco = document.createElement("div");
+  bloco.className = "mensagem" + (usuario ? " usuario" : "");
+  const nome = document.createElement("strong");
+  nome.textContent = titulo;
+  const corpo = document.createElement("div");
+  corpo.textContent = texto;
+  bloco.append(nome, corpo);
+  chat.append(bloco);
+  return corpo;
 }
 
-document.getElementById("estudo").addEventListener("submit", evento => {
-evento.preventDefault();
-explicar(document.getElementById("pergunta").value);
+carregar.addEventListener("click", async () => {
+  carregar.disabled = true;
+  try {
+    status.textContent = "Verificando compatibilidade...";
+    if (!navigator.gpu) {
+      throw new Error("Este navegador não disponibiliza WebGPU. Pode haver uma limitação do aparelho ou uma política da organização.");
+    }
+    const adapter = await navigator.gpu.requestAdapter();
+    if (!adapter) {
+      throw new Error("Não foi encontrada uma GPU compatível para executar a IA.");
+    }
+
+    status.textContent = "Carregando o programa da IA...";
+    const webllm = await import(
+      "https://esm.run/@mlc-ai/web-llm@0.2.79"
+    );
+
+    engine = await webllm.CreateMLCEngine(
+      "Qwen2.5-0.5B-Instruct-q4f16_1-MLC",
+      {
+        initProgressCallback: progresso => {
+          status.textContent = progresso.text;
+        }
+      }
+    );
+
+    status.textContent = "IA pronta! Digite sua pergunta.";
+    pergunta.disabled = false;
+    enviar.disabled = false;
+    carregar.textContent = "IA carregada";
+    pergunta.focus();
+  } catch (erro) {
+    status.textContent = "Não foi possível carregar a IA: " +
+      (erro.message || String(erro)) +
+      " Se houver bloqueio da organização, peça ajuda ao responsável pelo computador.";
+    carregar.disabled = false;
+    carregar.textContent = "Tentar carregar novamente";
+  }
 });
 
-document.querySelectorAll("[data-assunto]").forEach(botao => {
-botao.addEventListener("click", () => {
-document.getElementById("pergunta").value = botao.dataset.assunto;
-explicar(botao.dataset.assunto);
-});
-});
+document.getElementById("formulario").addEventListener(
+  "submit", async evento => {
+    evento.preventDefault();
+    const texto = pergunta.value.trim();
+    if (!texto || !engine || ocupada) return;
+
+    ocupada = true;
+    enviar.disabled = true;
+    pergunta.disabled = true;
+    mensagem("Você", texto, true);
+    const resposta = mensagem("TutorAI", "Pensando...");
+    status.textContent = "Preparando a resposta...";
+
+    try {
+      const resultado = await engine.chat.completions.create({
+        messages: [
+          sistema,
+          ...historico.slice(-4),
+          { role: "user", content: texto }
+        ],
+        temperature: 0.5,
+        max_tokens: 512
+      });
+
+      const conteudo = resultado.choices[0]?.message?.content;
+      if (!conteudo) {
+        throw new Error("A IA não retornou uma resposta. Tente uma pergunta mais curta.");
+      }
+
+      resposta.textContent = conteudo;
+      historico.push(
+        { role: "user", content: texto },
+        { role: "assistant", content: conteudo }
+      );
+      while (historico.length > 4) historico.splice(0, 2);
+      pergunta.value = "";
+      status.textContent = "Pronta para a próxima pergunta.";
+    } catch (erro) {
+      resposta.textContent = "Não consegui concluir: " +
+        (erro.message || String(erro));
+      status.textContent = "Tente novamente ou recarregue a página.";
+    } finally {
+      ocupada = false;
+      enviar.disabled = false;
+      pergunta.disabled = false;
+      pergunta.focus();
+    }
+  }
+);
 </script>
 </body>
 </html>
