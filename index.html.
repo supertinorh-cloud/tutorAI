@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>TutorAI — Seu espaço de estudos</title>
+  <style>
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: Arial, sans-serif;
+      background: #eef2ff;
+      color: #182444;
+    }
+    main {
+      max-width: 700px;
+      margin: 60px auto;
+      padding: 30px;
+      background: white;
+      border-radius: 20px;
+      box-shadow: 0 10px 35px #18244415;
+    }
+    h1 { color: #5145cd; }
+    p { line-height: 1.6; }
+    label { display: block; margin-top: 24px; }
+    textarea {
+      width: 100%;
+      min-height: 120px;
+      margin-top: 10px;
+      padding: 15px;
+      font: inherit;
+      border: 1px solid #aab4cc;
+      border-radius: 12px;
+    }
+    button {
+      margin-top: 15px;
+      padding: 14px 24px;
+      background: #5145cd;
+      color: white;
+      border: 0;
+      border-radius: 10px;
+      font: inherit;
+      cursor: pointer;
+    }
+    #resposta {
+      margin-top: 24px;
+      padding: 20px;
+      background: #f4f6ff;
+      border-radius: 12px;
+      white-space: pre-wrap;
+    }
+    @media (max-width: 750px) {
+      main { margin: 20px; padding: 24px; }
+    }
+  </style>
+</head>
+<body>
+  <main>
+    <h1>📚 TutorAI</h1>
+    <p>Seu espaço para aprender, praticar e estudar no seu ritmo.</p>
+    <p>Protótipo inicial: as respostas de inteligência artificial
+       ainda não estão conectadas.</p>
+
+    <form id="estudo">
+      <label for="pergunta">O que você quer estudar?</label>
+      <textarea id="pergunta"
+        placeholder="Exemplo: quero aprender frações"
+        required></textarea>
+      <button type="submit">Começar a estudar</button>
+    </form>
+
+    <div id="resposta" role="status" aria-live="polite">
+      Escreva um assunto para começar.
+    </div>
+  </main>
+
+  <script>
+    document.getElementById("estudo").addEventListener("submit", function(evento) {
+      evento.preventDefault();
+      const assunto = document.getElementById("pergunta").value.trim();
+      if (!assunto) return;
+
+      document.getElementById("resposta").textContent =
+        "Seu assunto: " + assunto +
+        "\n\nVamos organizar seu estudo:" +
+        "\n1. Anote o que você já sabe." +
+        "\n2. Identifique sua principal dúvida." +
+        "\n3. Procure um exemplo no material da aula." +
+        "\n4. Tente resolver um exercício." +
+        "\n\nEsta é uma orientação fixa do protótipo. A IA será adicionada depois.";
+    });
+  </script>
+</body>
+</html>
